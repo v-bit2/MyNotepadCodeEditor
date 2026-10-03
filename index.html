@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Code Editor</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1e1e1e; color: #d4d4d4; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    #toolbar { background: #252526; padding: 8px 12px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #333; }
+    button { background: #0e639c; color: white; border: none; padding: 6px 14px; border-radius: 3px; cursor: pointer; font-size: 13px; }
+    button:hover { background: #1177bb; }
+    #filePath { font-size: 12px; color: #858585; margin-left: 10px; }
+    #editor { flex: 1; width: 100%; background: #1e1e1e; color: #d4d4d4; padding: 12px; font-family: 'Consolas', 'Courier New', monospace; font-size: 14px; border: none; outline: none; resize: none; line-height: 1.5; }
+    #statusbar { background: #007acc; color: white; padding: 4px 12px; font-size: 12px; display: flex; justify-content: space-between; }
+  </style>
+</head>
+<body>
+  <div id="toolbar">
+    <button id="btnOpen">Open File</button>
+    <button id="btnSave">Save File</button>
+    <span id="filePath">No file opened</span>
+  </div>
+
+  <textarea id="editor" placeholder="// Write code or text here..."></textarea>
+
+  <div id="statusbar">
+    <span id="statusInfo">Lines: 1 | Chars: 0</span>
+    <span>Offline Mode</span>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+    let currentFilePath = null;
+
+    const editor = document.getElementById('editor');
+    const filePathLabel = document.getElementById('filePath');
+    const statusInfo = document.getElementById('statusInfo');
+
+    document.getElementById('btnOpen').addEventListener('click', async () => {
+      const res = await ipcRenderer.invoke('dialog:openFile');
+      if (res) {
+        editor.value = res.content;
+        currentFilePath = res.filePath;
+        filePathLabel.innerText = currentFilePath;
+        updateStatus();
+      }
+    });
+
+    document.getElementById('btnSave').addEventListener('click', async () => {
+      const savedPath = await ipcRenderer.invoke('dialog:saveFile', {
+        filePath: currentFilePath,
+        content: editor.value
+      });
+      if (savedPath) {
+        currentFilePath = savedPath;
+        filePathLabel.innerText = currentFilePath;
+      }
+    });
+
+    editor.addEventListener('input', updateStatus);
+
+    function updateStatus() {
+      const lines = editor.value.split('\n').length;
+      const chars = editor.value.length;
+      statusInfo.innerText = `Lines: ${lines} | Chars: ${chars}`;
+    }
+  </script>
+</body>
+</html>
