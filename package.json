@@ -4,8 +4,9 @@
   "description": "Custom offline code editor",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
-    "dist": "electron-builder"
+    "build": "esbuild src/renderer.js --bundle --outfile=dist/bundle.js --platform=node --external:electron --loader:.ttf=file --loader:.png=file",
+    "start": "npm run build && electron .",
+    "dist": "npm run build && electron-builder"
   },
   "build": {
     "appId": "com.mynotepad.codeeditor",
@@ -31,6 +32,18 @@
   },
   "devDependencies": {
     "electron": "^30.0.0",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^24.13.3",
+    "esbuild": "^0.28.2",
+    "monaco-editor": "^0.57.0",
+    "sharp": "^0.35.5"
+  },
+  "dependencies": {
+    "@codemirror/lang-css": "^6.3.1",
+    "@codemirror/lang-html": "^6.4.12",
+    "@codemirror/lang-javascript": "^6.2.5",
+    "@codemirror/lang-json": "^6.0.2",
+    "@codemirror/lang-python": "^6.2.1",
+    "@codemirror/theme-one-dark": "^6.1.3",
+    "codemirror": "^6.0.2"
   }
 }

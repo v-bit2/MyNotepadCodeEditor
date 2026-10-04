@@ -2,68 +2,489 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>My Code Editor</title>
+  <title>NovaCode Editor</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1e1e1e; color: #d4d4d4; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-    #toolbar { background: #252526; padding: 8px 12px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #333; }
-    button { background: #0e639c; color: white; border: none; padding: 6px 14px; border-radius: 3px; cursor: pointer; font-size: 13px; }
-    button:hover { background: #1177bb; }
-    #filePath { font-size: 12px; color: #858585; margin-left: 10px; }
-    #editor { flex: 1; width: 100%; background: #1e1e1e; color: #d4d4d4; padding: 12px; font-family: 'Consolas', 'Courier New', monospace; font-size: 14px; border: none; outline: none; resize: none; line-height: 1.5; }
-    #statusbar { background: #007acc; color: white; padding: 4px 12px; font-size: 12px; display: flex; justify-content: space-between; }
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --bg-hover: #475569;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-color: #38bdf8;
+      --accent-gradient: linear-gradient(135deg, #38bdf8, #818cf8);
+      --border-color: #334155;
+      --sidebar-width: 260px;
+      --statusbar-height: 28px;
+      --topbar-height: 48px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Navigation Bar */
+    #topbar {
+      height: var(--topbar-height);
+      background-color: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      -webkit-app-region: drag;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: 0.5px;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand img {
+      width: 24px;
+      height: 24px;
+      -webkit-app-region: no-drag;
+    }
+
+    .action-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      -webkit-app-region: no-drag;
+    }
+
+    .btn {
+      background: var(--bg-tertiary);
+      color: var(--text-main);
+      border: 1px solid transparent;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      background: var(--bg-hover);
+      border-color: var(--accent-color);
+    }
+
+    .btn-primary {
+      background: #0284c7;
+      color: #ffffff;
+    }
+    .btn-primary:hover {
+      background: #0369a1;
+    }
+
+    /* Main Container */
+    #main-container {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Sidebar File Explorer */
+    #sidebar {
+      width: var(--sidebar-width);
+      background-color: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      transition: width 0.2s ease;
+    }
+
+    .sidebar-header {
+      padding: 12px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .sidebar-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+
+    .icon-btn:hover {
+      color: var(--text-main);
+      background: var(--bg-tertiary);
+    }
+
+    #file-tree {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    .tree-item {
+      padding: 6px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tree-item:hover {
+      background-color: var(--bg-tertiary);
+      color: var(--text-main);
+    }
+
+    .tree-item.active {
+      background-color: #0369a1;
+      color: #ffffff;
+    }
+
+    .tree-indent {
+      display: inline-block;
+      width: 12px;
+    }
+
+    /* Editor Workspace Area */
+    #workspace {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background-color: var(--bg-primary);
+    }
+
+    /* Tabs Bar */
+    #tabs-bar {
+      height: 38px;
+      background-color: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      overflow-x: auto;
+    }
+
+    #tabs-bar::-webkit-scrollbar {
+      height: 3px;
+    }
+    #tabs-bar::-webkit-scrollbar-thumb {
+      background: var(--bg-hover);
+    }
+
+    .tab {
+      height: 100%;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background-color: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-size: 13px;
+      cursor: pointer;
+      position: relative;
+      min-width: 120px;
+      max-width: 200px;
+    }
+
+    .tab.active {
+      background-color: var(--bg-primary);
+      color: var(--accent-color);
+      border-top: 2px solid var(--accent-color);
+    }
+
+    .tab .tab-title {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .tab .tab-close {
+      font-size: 14px;
+      border-radius: 50%;
+      padding: 2px;
+      opacity: 0.6;
+    }
+
+    .tab .tab-close:hover {
+      opacity: 1;
+      background-color: var(--bg-hover);
+    }
+
+    .tab .dirty-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--accent-color);
+      display: inline-block;
+    }
+
+    /* Monaco Container */
+    #editor-container {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    /* Status Bar */
+    #statusbar {
+      height: var(--statusbar-height);
+      background-color: var(--bg-secondary);
+      border-top: 1px solid var(--border-color);
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .status-section {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .status-item:hover {
+      color: var(--text-main);
+    }
+
+    select.select-sm {
+      background: var(--bg-tertiary);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 11px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* Quick Palette Modal */
+    #modal-overlay {
+      display: none;
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 1000;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 80px;
+    }
+
+    #modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      width: 500px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .modal-input {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+      width: 100%;
+    }
+
+    .modal-input:focus {
+      border-color: var(--accent-color);
+    }
+
+    /* Welcome / Empty Screen */
+    #empty-state {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      color: var(--text-muted);
+      pointer-events: auto;
+      z-index: 10;
+    }
+
+    #empty-state h2 {
+      font-size: 22px;
+      color: var(--text-main);
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
-  <div id="toolbar">
-    <button id="btnOpen">Open File</button>
-    <button id="btnSave">Save File</button>
-    <span id="filePath">No file opened</span>
+  <!-- Top Navigation Bar -->
+  <div id="topbar">
+    <div class="brand">
+      <img src="assets/icon.svg" alt="NovaCode Logo">
+      <span>NovaCode Editor</span>
+    </div>
+
+    <div class="action-group">
+      <button id="btnNewFile" class="btn" title="New File (Ctrl+N)">📄 New File</button>
+      <button id="btnOpenFile" class="btn" title="Open File (Ctrl+O)">📂 Open File</button>
+      <button id="btnOpenFolder" class="btn" title="Open Workspace Folder">📁 Open Folder</button>
+      <button id="btnSaveFile" class="btn btn-primary" title="Save File (Ctrl+S)">💾 Save</button>
+      <button id="btnFormatCode" class="btn" title="Format Document (Alt+Shift+F)">⚡ Format</button>
+    </div>
   </div>
 
-  <textarea id="editor" placeholder="// Write code or text here..."></textarea>
+  <!-- Main Work Area -->
+  <div id="main-container">
+    <!-- Sidebar Explorer -->
+    <div id="sidebar">
+      <div class="sidebar-header">
+        <span>Explorer</span>
+        <div class="sidebar-actions">
+          <button id="btnSidebarNewFile" class="icon-btn" title="New File">+</button>
+          <button id="btnRefreshFolder" class="icon-btn" title="Refresh Workspace">🔄</button>
+        </div>
+      </div>
+      <div id="file-tree">
+        <div style="padding: 16px; font-size: 12px; color: var(--text-muted); text-align: center;">
+          No workspace opened. Open a folder or file to get started.
+        </div>
+      </div>
+    </div>
 
-  <div id="statusbar">
-    <span id="statusInfo">Lines: 1 | Chars: 0</span>
-    <span>Offline Mode</span>
+    <!-- Main Workspace -->
+    <div id="workspace">
+      <!-- Tabs Bar -->
+      <div id="tabs-bar"></div>
+
+      <!-- Editor Container -->
+      <div id="editor-container">
+        <div id="empty-state">
+          <img src="assets/icon.svg" width="80" height="80" alt="Logo">
+          <h2>Welcome to NovaCode Editor</h2>
+          <p>A fast, modern offline code editor with full syntax support.</p>
+          <div style="display: flex; gap: 10px; margin-top: 8px;">
+            <button id="emptyBtnNew" class="btn btn-primary">Create New File</button>
+            <button id="emptyBtnOpen" class="btn">Open Existing File</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Bar -->
+      <div id="statusbar">
+        <div class="status-section">
+          <span id="statusPos" class="status-item">Ln 1, Col 1</span>
+          <span id="statusLength" class="status-item">0 lines, 0 chars</span>
+        </div>
+
+        <div class="status-section">
+          <div class="status-item">
+            <label for="selectLanguage">Language:</label>
+            <select id="selectLanguage" class="select-sm">
+              <option value="plaintext">Plain Text</option>
+              <option value="javascript">JavaScript</option>
+              <option value="typescript">TypeScript</option>
+              <option value="html">HTML</option>
+              <option value="css">CSS</option>
+              <option value="json">JSON</option>
+              <option value="python">Python</option>
+              <option value="markdown">Markdown</option>
+              <option value="cpp">C++ / C</option>
+              <option value="csharp">C#</option>
+              <option value="java">Java</option>
+              <option value="rust">Rust</option>
+              <option value="go">Go</option>
+              <option value="sql">SQL</option>
+              <option value="shell">Shell / Bash</option>
+              <option value="yaml">YAML</option>
+              <option value="xml">XML</option>
+            </select>
+          </div>
+
+          <div class="status-item">
+            <label for="selectTheme">Theme:</label>
+            <select id="selectTheme" class="select-sm">
+              <option value="vs-dark">Dark (Default)</option>
+              <option value="vs">Light</option>
+              <option value="hc-black">High Contrast</option>
+            </select>
+          </div>
+
+          <span id="statusEncoding" class="status-item">UTF-8</span>
+          <span id="statusAutoSave" class="status-item" style="color: #38bdf8;">Auto-Save: Off</span>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <script>
-    const { ipcRenderer } = require('electron');
-    let currentFilePath = null;
+  <!-- Command Palette / Quick Prompt Modal -->
+  <div id="modal-overlay">
+    <div class="modal-box">
+      <h3 id="modalTitle" style="font-size: 16px; font-weight: 600;">Action Prompt</h3>
+      <input type="text" id="modalInput" class="modal-input" placeholder="Type name here...">
+      <div style="display: flex; justify-content: flex-end; gap: 8px;">
+        <button id="modalCancel" class="btn">Cancel</button>
+        <button id="modalConfirm" class="btn btn-primary">Confirm</button>
+      </div>
+    </div>
+  </div>
 
-    const editor = document.getElementById('editor');
-    const filePathLabel = document.getElementById('filePath');
-    const statusInfo = document.getElementById('statusInfo');
-
-    document.getElementById('btnOpen').addEventListener('click', async () => {
-      const res = await ipcRenderer.invoke('dialog:openFile');
-      if (res) {
-        editor.value = res.content;
-        currentFilePath = res.filePath;
-        filePathLabel.innerText = currentFilePath;
-        updateStatus();
-      }
-    });
-
-    document.getElementById('btnSave').addEventListener('click', async () => {
-      const savedPath = await ipcRenderer.invoke('dialog:saveFile', {
-        filePath: currentFilePath,
-        content: editor.value
-      });
-      if (savedPath) {
-        currentFilePath = savedPath;
-        filePathLabel.innerText = currentFilePath;
-      }
-    });
-
-    editor.addEventListener('input', updateStatus);
-
-    function updateStatus() {
-      const lines = editor.value.split('\n').length;
-      const chars = editor.value.length;
-      statusInfo.innerText = `Lines: ${lines} | Chars: ${chars}`;
-    }
-  </script>
+  <link rel="stylesheet" href="dist/bundle.css">
+  <script src="dist/bundle.js"></script>
 </body>
 </html>
