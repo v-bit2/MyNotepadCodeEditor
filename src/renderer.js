@@ -32,40 +32,46 @@ const EXTENSION_MAP = {
   txt: 'plaintext', log: 'plaintext'
 };
 
+// SVG Icon Helpers
+const SVG_ICONS = {
+  folder: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
+  fileCode: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><polyline points="10 13 8 15 10 17"/><polyline points="14 13 16 15 14 17"/></svg>`,
+  close: `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
+};
+
 // DOM Elements
-const editorContainer = document.getElementById('editor-container');
-const emptyState = document.getElementById('empty-state');
-const tabsBar = document.getElementById('tabs-bar');
-const fileTreeContainer = document.getElementById('file-tree');
-
-const statusPos = document.getElementById('statusPos');
-const statusLength = document.getElementById('statusLength');
-const statusAutoSave = document.getElementById('statusAutoSave');
-const selectLanguage = document.getElementById('selectLanguage');
-const selectTheme = document.getElementById('selectTheme');
-
-// Modal Elements
-const modalOverlay = document.getElementById('modal-overlay');
-const modalTitle = document.getElementById('modalTitle');
-const modalInput = document.getElementById('modalInput');
-const modalCancel = document.getElementById('modalCancel');
-const modalConfirm = document.getElementById('modalConfirm');
+let editorContainer, emptyState, tabsBar, fileTreeContainer;
+let statusPos, statusLength, statusAutoSave, selectLanguage, selectTheme;
+let modalOverlay, modalTitle, modalInput, modalCancel, modalConfirm;
 let onModalSubmitCallback = null;
 
 // Initialize Editor
 function initEditor() {
-  // Monaco Worker Environment Setup for esbuild / bundlers
+  // Offline Monaco Environment Setup
   window.MonacoEnvironment = {
-    getWorkerUrl: function (moduleId, label) {
-      return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
-        self.MonacoEnvironment = {
-          baseUrl: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.38.0/min/'
-        };
-        importScripts('https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.38.0/min/vs/base/worker/workerMain.js');
-      `)}`;
+    getWorkerUrl: function () {
+      return `data:text/javascript;charset=utf-8,${encodeURIComponent('self.onmessage = function() {};')}`;
     }
   };
 
+  editorContainer = document.getElementById('editor-container');
+  emptyState = document.getElementById('empty-state');
+  tabsBar = document.getElementById('tabs-bar');
+  fileTreeContainer = document.getElementById('file-tree');
+
+  statusPos = document.getElementById('statusPos');
+  statusLength = document.getElementById('statusLength');
+  statusAutoSave = document.getElementById('statusAutoSave');
+  selectLanguage = document.getElementById('selectLanguage');
+  selectTheme = document.getElementById('selectTheme');
+
+  modalOverlay = document.getElementById('modal-overlay');
+  modalTitle = document.getElementById('modalTitle');
+  modalInput = document.getElementById('modalInput');
+  modalCancel = document.getElementById('modalCancel');
+  modalConfirm = document.getElementById('modalConfirm');
+
+  // Create Monaco Editor Instance
   editor = monaco.editor.create(editorContainer, {
     value: '',
     language: 'javascript',
@@ -87,7 +93,9 @@ function initEditor() {
 
   // Track Cursor and Selection changes
   editor.onDidChangeCursorPosition((e) => {
-    statusPos.innerText = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
+    if (statusPos) {
+      statusPos.innerText = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
+    }
   });
 
   // Track Content changes
@@ -118,7 +126,7 @@ function initEditor() {
 
 // Update Cursor & Stats
 function updateEditorStats() {
-  if (!editor) return;
+  if (!editor || !statusLength) return;
   const model = editor.getModel();
   if (!model) return;
   const lineCount = model.getLineCount();
@@ -155,7 +163,7 @@ function switchTab(tabId) {
 
   activeTabId = tabId;
   editor.setModel(tab.model);
-  selectLanguage.value = tab.language;
+  if (selectLanguage) selectLanguage.value = tab.language;
 
   updateEditorStats();
   renderTabs();
@@ -187,6 +195,7 @@ function closeTab(tabId, e) {
 }
 
 function renderTabs() {
+  if (!tabsBar) return;
   tabsBar.innerHTML = '';
   tabs.forEach(tab => {
     const tabEl = document.createElement('div');
@@ -206,7 +215,7 @@ function renderTabs() {
 
     const closeBtn = document.createElement('span');
     closeBtn.className = 'tab-close';
-    closeBtn.innerHTML = '✕';
+    closeBtn.innerHTML = SVG_ICONS.close;
     closeBtn.addEventListener('click', (e) => closeTab(tab.id, e));
     tabEl.appendChild(closeBtn);
 
@@ -216,6 +225,7 @@ function renderTabs() {
 }
 
 function updateEmptyState() {
+  if (!emptyState) return;
   if (tabs.length === 0) {
     emptyState.style.display = 'flex';
   } else {
@@ -254,7 +264,6 @@ async function saveActiveTab() {
 async function handleOpenFile() {
   const res = await ipcRenderer.invoke('dialog:openFile');
   if (res && !res.error) {
-    // Check if file is already open
     const existing = tabs.find(t => t.filePath === res.filePath);
     if (existing) {
       switchTab(existing.id);
@@ -283,13 +292,17 @@ async function refreshWorkspaceFolder() {
 
 // Render File Tree Sidebar
 function renderDirectoryTree(treeItems, rootName) {
+  if (!fileTreeContainer) return;
   fileTreeContainer.innerHTML = '';
   const rootHeader = document.createElement('div');
   rootHeader.style.padding = '8px 14px';
   rootHeader.style.fontWeight = 'bold';
   rootHeader.style.fontSize = '12px';
   rootHeader.style.color = '#38bdf8';
-  rootHeader.innerText = `📂 ${rootName}`;
+  rootHeader.style.display = 'flex';
+  rootHeader.style.alignItems = 'center';
+  rootHeader.style.gap = '8px';
+  rootHeader.innerHTML = `${SVG_ICONS.folder} <span>${rootName}</span>`;
   fileTreeContainer.appendChild(rootHeader);
 
   function appendItems(items, container, depth = 0) {
@@ -302,7 +315,7 @@ function renderDirectoryTree(treeItems, rootName) {
       itemEl.appendChild(indent);
 
       const icon = document.createElement('span');
-      icon.innerText = item.isFolder ? '📁' : getFileIcon(item.name);
+      icon.innerHTML = item.isFolder ? SVG_ICONS.folder : SVG_ICONS.fileCode;
       itemEl.appendChild(icon);
 
       const label = document.createElement('span');
@@ -323,7 +336,6 @@ function renderDirectoryTree(treeItems, rootName) {
         });
       } else {
         itemEl.addEventListener('click', () => {
-          // Toggle folder children
           const subContainer = itemEl.nextElementSibling;
           if (subContainer && subContainer.classList.contains('folder-children')) {
             subContainer.style.display = subContainer.style.display === 'none' ? 'block' : 'none';
@@ -345,20 +357,6 @@ function renderDirectoryTree(treeItems, rootName) {
   appendItems(treeItems, fileTreeContainer, 1);
 }
 
-function getFileIcon(filename) {
-  const ext = path.extname(filename).toLowerCase();
-  switch (ext) {
-    case '.js': return '⚡';
-    case '.ts': return '📘';
-    case '.html': return '🌐';
-    case '.css': return '🎨';
-    case '.json': return '⚙️';
-    case '.py': return '🐍';
-    case '.md': return '📝';
-    default: return '📄';
-  }
-}
-
 // Modal Prompt helper
 function showModal(title, placeholder, defaultValue, onSubmit) {
   modalTitle.innerText = title;
@@ -376,16 +374,16 @@ function closeModal() {
 
 // Event Listeners setup
 function setupEventListeners() {
-  document.getElementById('btnNewFile').addEventListener('click', () => createNewTab());
-  document.getElementById('btnOpenFile').addEventListener('click', handleOpenFile);
-  document.getElementById('btnOpenFolder').addEventListener('click', handleOpenFolder);
-  document.getElementById('btnSaveFile').addEventListener('click', saveActiveTab);
+  document.getElementById('btnNewFile')?.addEventListener('click', () => createNewTab());
+  document.getElementById('btnOpenFile')?.addEventListener('click', handleOpenFile);
+  document.getElementById('btnOpenFolder')?.addEventListener('click', handleOpenFolder);
+  document.getElementById('btnSaveFile')?.addEventListener('click', saveActiveTab);
 
-  document.getElementById('emptyBtnNew').addEventListener('click', () => createNewTab());
-  document.getElementById('emptyBtnOpen').addEventListener('click', handleOpenFile);
+  document.getElementById('emptyBtnNew')?.addEventListener('click', () => createNewTab());
+  document.getElementById('emptyBtnOpen')?.addEventListener('click', handleOpenFile);
 
-  document.getElementById('btnRefreshFolder').addEventListener('click', refreshWorkspaceFolder);
-  document.getElementById('btnSidebarNewFile').addEventListener('click', () => {
+  document.getElementById('btnRefreshFolder')?.addEventListener('click', refreshWorkspaceFolder);
+  document.getElementById('btnSidebarNewFile')?.addEventListener('click', () => {
     if (!currentFolderPath) {
       createNewTab();
     } else {
@@ -405,14 +403,14 @@ function setupEventListeners() {
   });
 
   // Code Formatter
-  document.getElementById('btnFormatCode').addEventListener('click', () => {
+  document.getElementById('btnFormatCode')?.addEventListener('click', () => {
     if (editor) {
       editor.getAction('editor.action.formatDocument')?.run();
     }
   });
 
   // Language Selector
-  selectLanguage.addEventListener('change', (e) => {
+  selectLanguage?.addEventListener('change', (e) => {
     const lang = e.target.value;
     if (activeTabId) {
       const activeTab = tabs.find(t => t.id === activeTabId);
@@ -424,24 +422,24 @@ function setupEventListeners() {
   });
 
   // Theme Selector
-  selectTheme.addEventListener('change', (e) => {
+  selectTheme?.addEventListener('change', (e) => {
     monaco.editor.setTheme(e.target.value);
   });
 
   // Toggle Auto-Save
-  statusAutoSave.addEventListener('click', () => {
+  statusAutoSave?.addEventListener('click', () => {
     autoSaveEnabled = !autoSaveEnabled;
     statusAutoSave.innerText = `Auto-Save: ${autoSaveEnabled ? 'On' : 'Off'}`;
     statusAutoSave.style.color = autoSaveEnabled ? '#10b981' : '#38bdf8';
   });
 
   // Modal Handlers
-  modalCancel.addEventListener('click', closeModal);
-  modalConfirm.addEventListener('click', () => {
+  modalCancel?.addEventListener('click', closeModal);
+  modalConfirm?.addEventListener('click', () => {
     if (onModalSubmitCallback) onModalSubmitCallback(modalInput.value);
     closeModal();
   });
-  modalInput.addEventListener('keydown', (e) => {
+  modalInput?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       if (onModalSubmitCallback) onModalSubmitCallback(modalInput.value);
       closeModal();

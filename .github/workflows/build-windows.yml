@@ -1,0 +1,41 @@
+name: Build NovaCode Editor Executable
+
+on:
+  push:
+    branches: [ main, master, feature/** ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Bundle
+        run: npm run build
+
+      - name: Build Windows Executable (.exe)
+        run: npm run dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Executable Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: NovaCode-Editor-Windows-Exe
+          path: |
+            dist/*.exe
+            dist/*.blockmap

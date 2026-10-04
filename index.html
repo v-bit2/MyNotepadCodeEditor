@@ -56,9 +56,9 @@
       -webkit-text-fill-color: transparent;
     }
 
-    .brand img {
-      width: 24px;
-      height: 24px;
+    .brand svg {
+      width: 22px;
+      height: 22px;
       -webkit-app-region: no-drag;
     }
 
@@ -82,6 +82,12 @@
       align-items: center;
       gap: 6px;
       transition: all 0.2s ease;
+    }
+
+    .btn svg {
+      width: 15px;
+      height: 15px;
+      stroke-width: 2;
     }
 
     .btn:hover {
@@ -138,9 +144,16 @@
       border: none;
       color: var(--text-muted);
       cursor: pointer;
-      font-size: 14px;
-      padding: 2px 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
       border-radius: 4px;
+    }
+
+    .icon-btn svg {
+      width: 15px;
+      height: 15px;
     }
 
     .icon-btn:hover {
@@ -167,6 +180,12 @@
       text-overflow: ellipsis;
     }
 
+    .tree-item svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
     .tree-item:hover {
       background-color: var(--bg-tertiary);
       color: var(--text-main);
@@ -175,11 +194,6 @@
     .tree-item.active {
       background-color: #0369a1;
       color: #ffffff;
-    }
-
-    .tree-indent {
-      display: inline-block;
-      width: 12px;
     }
 
     /* Editor Workspace Area */
@@ -210,7 +224,7 @@
 
     .tab {
       height: 100%;
-      padding: 0 16px;
+      padding: 0 14px;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -238,10 +252,17 @@
     }
 
     .tab .tab-close {
-      font-size: 14px;
-      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
       padding: 2px;
       opacity: 0.6;
+    }
+
+    .tab .tab-close svg {
+      width: 12px;
+      height: 12px;
     }
 
     .tab .tab-close:hover {
@@ -376,16 +397,34 @@
   <!-- Top Navigation Bar -->
   <div id="topbar">
     <div class="brand">
-      <img src="assets/icon.svg" alt="NovaCode Logo">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="16 18 22 12 16 6"></polyline>
+        <polyline points="8 6 2 12 8 18"></polyline>
+      </svg>
       <span>NovaCode Editor</span>
     </div>
 
     <div class="action-group">
-      <button id="btnNewFile" class="btn" title="New File (Ctrl+N)">📄 New File</button>
-      <button id="btnOpenFile" class="btn" title="Open File (Ctrl+O)">📂 Open File</button>
-      <button id="btnOpenFolder" class="btn" title="Open Workspace Folder">📁 Open Folder</button>
-      <button id="btnSaveFile" class="btn btn-primary" title="Save File (Ctrl+S)">💾 Save</button>
-      <button id="btnFormatCode" class="btn" title="Format Document (Alt+Shift+F)">⚡ Format</button>
+      <button id="btnNewFile" class="btn" title="New File (Ctrl+N)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        <span>New File</span>
+      </button>
+      <button id="btnOpenFile" class="btn" title="Open File (Ctrl+O)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2z"/></svg>
+        <span>Open File</span>
+      </button>
+      <button id="btnOpenFolder" class="btn" title="Open Workspace Folder">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <span>Open Folder</span>
+      </button>
+      <button id="btnSaveFile" class="btn btn-primary" title="Save File (Ctrl+S)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        <span>Save</span>
+      </button>
+      <button id="btnFormatCode" class="btn" title="Format Document (Alt+Shift+F)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <span>Format</span>
+      </button>
     </div>
   </div>
 
@@ -396,8 +435,12 @@
       <div class="sidebar-header">
         <span>Explorer</span>
         <div class="sidebar-actions">
-          <button id="btnSidebarNewFile" class="icon-btn" title="New File">+</button>
-          <button id="btnRefreshFolder" class="icon-btn" title="Refresh Workspace">🔄</button>
+          <button id="btnSidebarNewFile" class="icon-btn" title="New File">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+          <button id="btnRefreshFolder" class="icon-btn" title="Refresh Workspace">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          </button>
         </div>
       </div>
       <div id="file-tree">
@@ -415,7 +458,10 @@
       <!-- Editor Container -->
       <div id="editor-container">
         <div id="empty-state">
-          <img src="assets/icon.svg" width="80" height="80" alt="Logo">
+          <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 18 22 12 16 6"></polyline>
+            <polyline points="8 6 2 12 8 18"></polyline>
+          </svg>
           <h2>Welcome to NovaCode Editor</h2>
           <p>A fast, modern offline code editor with full syntax support.</p>
           <div style="display: flex; gap: 10px; margin-top: 8px;">

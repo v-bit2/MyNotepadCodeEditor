@@ -13,7 +13,7 @@ function createWindow() {
     title: "NovaCode Editor",
     icon: path.join(__dirname, 'assets', 'icon.png'),
     backgroundColor: '#0f172a',
-    titleBarStyle: 'hiddenInset', // Sleek macOS/modern title bar styling if supported
+    autoHideMenuBar: true,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -21,9 +21,7 @@ function createWindow() {
     }
   });
 
-  // Remove default menu bar or build minimal native app menu
   Menu.setApplicationMenu(null);
-
   mainWindow.loadFile('index.html');
 }
 
@@ -41,20 +39,24 @@ app.on('activate', () => {
   }
 });
 
-// File Open Handler
-ipcMain.handle('dialog:openFile', async () => {
-  const { canceled, filePaths } = await dialog.showOpenDialog({
-    properties: ['openFile'],
-    filters: [
-      { name: 'All Files', extensions: ['*'] },
-      { name: 'JavaScript / TypeScript', extensions: ['js', 'jsx', 'ts', 'tsx', 'mjs'] },
-      { name: 'Web Files', extensions: ['html', 'css', 'scss', 'json', 'xml', 'svg'] },
-      { name: 'Python', extensions: ['py'] },
-      { name: 'Text & Markdown', extensions: ['txt', 'md'] }
-    ]
-  });
-  if (canceled || filePaths.length === 0) return null;
-  const filePath = filePaths[0];
+// File Open Handler (supports direct path or dialog picker)
+ipcMain.handle('dialog:openFile', async (event, explicitPath) => {
+  let filePath = explicitPath;
+  if (!filePath) {
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [
+        { name: 'All Files', extensions: ['*'] },
+        { name: 'JavaScript / TypeScript', extensions: ['js', 'jsx', 'ts', 'tsx', 'mjs'] },
+        { name: 'Web Files', extensions: ['html', 'css', 'scss', 'json', 'xml', 'svg'] },
+        { name: 'Python', extensions: ['py'] },
+        { name: 'Text & Markdown', extensions: ['txt', 'md'] }
+      ]
+    });
+    if (canceled || filePaths.length === 0) return null;
+    filePath = filePaths[0];
+  }
+
   try {
     const content = fs.readFileSync(filePath, 'utf-8');
     const stats = fs.statSync(filePath);
@@ -159,7 +161,6 @@ function readDirectoryTree(dirPath, depth = 0, maxDepth = 4) {
     const items = fs.readdirSync(dirPath, { withFileTypes: true });
     const result = [];
 
-    // Filter out node_modules, .git, build folders for performance
     const ignored = new Set(['node_modules', '.git', '.DS_Store', 'dist', 'build', '.idea', '.vscode']);
 
     for (const item of items) {
@@ -181,7 +182,6 @@ function readDirectoryTree(dirPath, depth = 0, maxDepth = 4) {
       }
     }
 
-    // Sort folders first, then files
     result.sort((a, b) => {
       if (a.isFolder === b.isFolder) return a.name.localeCompare(b.name);
       return a.isFolder ? -1 : 1;
